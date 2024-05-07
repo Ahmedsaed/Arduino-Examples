@@ -1,6 +1,7 @@
 #include <string.h>
 
 #define MODE_PIN 2
+#define BUZZER_PIN 3
 
 /*
   air_quality_sensors.ino:
@@ -15,6 +16,7 @@ void setup() {
   Serial.begin(9600);
 
   pinMode(MODE_PIN, INPUT_PULLUP);
+  pinMode(BUZZER_PIN, OUTPUT);
 
   setupLCD();
   setupSensors();
@@ -48,22 +50,33 @@ void debug() {
   Serial.println("Smoke: " + String(getSmoke()));
 }
 
+float calprecentage(int v, int min = 0, int max = 1024) {
+  if (min >= max || v < min || v > max) {
+    // Invalid input, return 0 or some error indicator
+    return 0.0f; // Or you can return -1 or any other suitable error indicator
+  }
+
+  float range = max - min;
+  float percentage = ((v - min) / range) * 100.0f;
+  return percentage; 
+}
+
 void displayScreen(int index) {
   switch (index) {
     case 0:
-      displayInfo("Temp: " + String(getTemp()));
+      displayInfo("Temp: " + String(getTemp()) + "C");
       break;
     case 1:
-      displayInfo("Humidity: " + String(getHumidity()));
+      displayInfo("Humidity: " + String(getHumidity()) + "%");
       break;
     case 2:
-      displayInfo("LPG: " + String(getLPG()));
+      displayInfo("LPG: " + String(calprecentage(getLPG())) + "%");
       break;
     case 3:
-      displayInfo("CO: " + String(getCO()));
+      displayInfo("CO: " + String(calprecentage(getCO())) + "%");
       break;
     case 4:
-      displayInfo("Smoke: " + String(getSmoke()));
+      displayInfo("Smoke: " + String(calprecentage(getSmoke())) + "%");
       break;
   }
 }
@@ -71,7 +84,8 @@ void displayScreen(int index) {
 void SmokeWarning(float smokeLevel) {
   if (smokeLevel > 200) {
     displayInfo("Warning! Run run.");
-    // buzzer code
-    delay(5000);
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(2500);
+    digitalWrite(BUZZER_PIN, LOW);
   }
 }
